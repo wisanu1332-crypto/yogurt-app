@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>สั่งกรีกโยเกิร์ต 🍨</title>
+
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+  body {
+    font-family: 'IBM Plex Sans Thai', sans-serif;
+    background: #e9f4ff;
+    padding: 20px;
+  }
+  .box {
+    max-width: 450px;
+    margin: auto;
+    background: white;
+    padding: 22px;
+    border-radius: 20px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.12);
+  }
+  h2 {
+    text-align: center;
+    margin-bottom: 18px;
+  }
+  select, input {
+    width: 100%;
+    padding: 14px;
+    margin-top: 12px;
+    font-size: 16px;
+    border-radius: 12px;
+    border: 1px solid #aacbff;
+  }
+  button {
+    width: 100%;
+    background: #4d9bff;
+    color: white;
+    padding: 18px;
+    font-size: 18px;
+    border: 0;
+    border-radius: 14px;
+    cursor: pointer;
+    margin-top: 20px;
+  }
+  .price-box {
+    margin-top: 15px;
+    background: #f0f7ff;
+    padding: 12px;
+    border-radius: 12px;
+    text-align: center;
+    font-size: 18px;
+  }
+  .stock {
+    text-align: center;
+    background: #d9edff;
+    padding: 10px;
+    border-radius: 20px;
+    font-size: 16px;
+    margin-bottom: 15px;
+  }
+  .fruits {
+    margin-top: 10px;
+    padding: 10px;
+    background: #f7fbff;
+    border-radius: 10px;
+  }
+  .fruits label {
+    display: block;
+    padding: 5px 0;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="box">
+
+  <div class="stock">
+    📦 สต๊อกวันนี้: <span id="stockText">โหลด...</span> / 32 สกู๊ป
+  </div>
+
+  <h2>🍨 สั่งกรีกโยเกิร์ต</h2>
+
+  <label>จำนวนสกู๊ป</label>
+  <select id="scoops" onchange="updatePrice()">
+    <option value="1">1 สกู๊ป</option>
+    <option value="2">2 สกู๊ป</option>
+  </select>
+
+  <label>เลือกผลไม้ (เลือกได้สูงสุด 3 อย่าง)</label>
+
+  <div class="fruits">
+    <label><input type="checkbox" name="fruit" value="กีวี"      onchange="limitFruit()"> กีวี</label>
+    <label><input type="checkbox" name="fruit" value="กล้วย"     onchange="limitFruit()"> กล้วย</label>
+    <label><input type="checkbox" name="fruit" value="บลูเบอร์รี่" onchange="limitFruit()"> บลูเบอร์รี่</label>
+    <label><input type="checkbox" name="fruit" value="องุ่น"      onchange="limitFruit()"> องุ่น</label>
+    <label><input type="checkbox" name="fruit" value="สตรอว์เบอร์รี่แช่แข็ง" onchange="limitFruit()"> สตรอว์เบอร์รี่แช่แข็ง</label>
+    <label><input type="checkbox" name="fruit" value="เบอร์รี่รวมแช่แข็ง" onchange="limitFruit()"> เบอร์รี่รวมแช่แข็ง</label>
+    <label><input type="checkbox" name="fruit" value="มะม่วงแช่แข็ง" onchange="limitFruit()"> มะม่วงแช่แข็ง</label>
+  </div>
+
+  <label>ชื่อลูกค้า</label>
+  <input id="name" placeholder="ชื่อของคุณ">
+
+  <div class="price-box">
+    💰 ราคา: <span id="priceText">0</span> บาท
+  </div>
+
+  <button onclick="submitOrder()">ยืนยันการสั่งซื้อ</button>
+
+</div>
+
+<script>
+  const endpoint = "https://script.google.com/macros/s/AKfycbx0eur7Ev9lwX1RzF_OHI_3Ui5W01B1d8Knzad37DmSiQ8GoI0PcMq3UF1cyGJM8gfD/exec";   // ← เปรมใส่ลิงก์ตรงนี้
+
+  const prices = {
+    "1_none": 39,
+    "2_none": 69,
+    "1_fruit": 59,
+    "2_fruit": 89
+  };
+
+  let currentStock = 0;
+
+  async function loadStock() {
+    const res = await fetch(endpoint + "?stock=true");
+    const data = await res.json();
+    currentStock = data.stock;
+    document.getElementById("stockText").innerText = currentStock;
+  }
+
+  // จำกัดผลไม้ได้สูงสุด 3 อย่าง
+  function limitFruit() {
+    const boxes = document.querySelectorAll("input[name='fruit']:checked");
+    if (boxes.length > 3) {
+      Swal.fire("เลือกผลไม้ได้สูงสุด 3 อย่างนะครับ 🍓");
+      event.target.checked = false;
+    }
+    updatePrice();
+  }
+
+  function updatePrice() {
+    const scoops = document.getElementById("scoops").value;
+    const selected = document.querySelectorAll("input[name='fruit']:checked");
+    const fruitCount = selected.length;
+
+    const key = scoops + "_" + (fruitCount === 0 ? "none" : "fruit");
+    document.getElementById("priceText").innerText = prices[key];
+  }
+
+  async function submitOrder() {
+    const scoops = Number(document.getElementById("scoops").value);
+    const name = document.getElementById("name").value.trim();
+
+    const fruitBoxes = document.querySelectorAll("input[name='fruit']:checked");
+    const fruits = Array.from(fruitBoxes).map(f => f.value);
+
+    const price = Number(document.getElementById("priceText").innerText);
+
+    if (!name) {
+      Swal.fire("กรุณากรอกชื่อก่อนครับ");
+      return;
+    }
+
+    if (scoops > currentStock) {
+      Swal.fire("สต๊อกไม่พอครับ 🥺");
+      return;
+    }
+
+    const data = {
+      name,
+      scoops,
+      fruits,
+      price,
+      timestamp: new Date().toLocaleString("th-TH")
+    };
+
+    await fetch(endpoint, {
+      method: "POST",
+      body: JSON.stringify(data)
+    });
+
+    Swal.fire({
+      icon: "success",
+      title: "สั่งซื้อสำเร็จ!",
+      text: "ขอบคุณที่อุดหนุนครับ 🍨",
+    });
+
+    loadStock();
+    document.getElementById("name").value = "";
+    fruitBoxes.forEach(f => f.checked = false);
+    updatePrice();
+  }
+
+  loadStock();
+  updatePrice();
+</script>
+
+</body>
+</html>
